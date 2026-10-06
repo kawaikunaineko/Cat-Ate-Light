@@ -2,32 +2,39 @@ using UnityEngine;
 
 public class CatMovement : MonoBehaviour
 {
-    public float laneDistance = 3f;
-    public float moveSpeed = 10f;
+    public float moveSpeed = 5f;
+    public float turnSpeed = 180f;
 
-    private int currentLane = 0;
+    private Animator animator;
+
+    void Start()
+    {
+        animator = GetComponent<Animator>();
+    }
 
     void Update()
     {
-        transform.Translate(Vector3.forward * 2f * Time.deltaTime);
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
-            currentLane--;
+        float move = 0f;
+        float turn = 0f;
 
-        if (Input.GetKeyDown(KeyCode.RightArrow))
-            currentLane++;
+        if (Input.GetKey(KeyCode.W))
+            move = 1f;
 
-        currentLane = Mathf.Clamp(currentLane, -1, 1);
+        if (Input.GetKey(KeyCode.S))
+            move = -1f;
 
-        Vector3 targetPosition = new Vector3(
-            currentLane * laneDistance,
-            transform.position.y,
-            transform.position.z
-        );
+        if (Input.GetKey(KeyCode.A))
+            turn = -1f;
 
-        transform.position = Vector3.MoveTowards(
-            transform.position,
-            targetPosition,
-            moveSpeed * Time.deltaTime
-        );
+        if (Input.GetKey(KeyCode.D))
+            turn = 1f;
+
+        transform.Rotate(Vector3.up * turn * turnSpeed * Time.deltaTime);
+
+        CharacterController controller = GetComponent<CharacterController>();
+        controller.Move(transform.forward * move * moveSpeed * Time.deltaTime);
+
+        bool isMoving = move != 0f || turn != 0f;
+        animator.SetBool("IsRunning", isMoving);
     }
 }
