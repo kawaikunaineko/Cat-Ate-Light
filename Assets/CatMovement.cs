@@ -3,38 +3,64 @@ using UnityEngine;
 public class CatMovement : MonoBehaviour
 {
     public float moveSpeed = 5f;
-    public float turnSpeed = 180f;
+    public float rotationSpeed = 10f;
+
+    public Transform cameraTransform;
 
     private Animator animator;
+    private CharacterController controller;
 
     void Start()
     {
         animator = GetComponent<Animator>();
+        controller = GetComponent<CharacterController>();
     }
 
     void Update()
     {
-        float move = 0f;
-        float turn = 0f;
+        float horizontal = Input.GetAxisRaw("Horizontal");
+        float vertical = Input.GetAxisRaw("Vertical");
 
-        if (Input.GetKey(KeyCode.W))
-            move = 1f;
+        // Get camera directions
+        Vector3 forward = cameraTransform.forward;
+        Vector3 right = cameraTransform.right;
 
-        if (Input.GetKey(KeyCode.S))
-            move = -1f;
+        // Keep movement on the ground
+        forward.y = 0f;
+        right.y = 0f;
 
-        if (Input.GetKey(KeyCode.A))
-            turn = -1f;
+        forward.Normalize();
+        right.Normalize();
 
-        if (Input.GetKey(KeyCode.D))
-            turn = 1f;
+        // Calculate movement direction
+        Vector3 movement = forward * vertical + right * horizontal;
 
-        transform.Rotate(Vector3.up * turn * turnSpeed * Time.deltaTime);
+        if (movement.magnitude > 1f)
+        {
+            movement.Normalize();
+        }
 
-        CharacterController controller = GetComponent<CharacterController>();
-        controller.Move(transform.forward * move * moveSpeed * Time.deltaTime);
+        // Move cat
+        controller.Move(movement * moveSpeed * Time.deltaTime);
 
-        bool isMoving = move != 0f || turn != 0f;
-        animator.SetBool("IsRunning", isMoving);
+        // Rotate cat toward movement direction
+        if (movement != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(movement);
+
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                targetRotation,
+                rotationSpeed * Time.deltaTime
+            );
+        }
+
+        // Animation
+        bool isMoving = movement.magnitude > 0f;
+
+        if (animator != null)
+        {
+            animator.SetBool("IsRunning", isMoving);
+        }
     }
 }
